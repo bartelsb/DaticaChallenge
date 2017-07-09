@@ -100,4 +100,4 @@ ENV/
 
 # Personal additions
 .idea/
-*.sqlite
+*.sqlite*

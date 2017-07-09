@@ -44,7 +44,7 @@ def delete_user(username):
     conn = sqlite3.connect(database_file)
     c = conn.cursor()
 
-    params = username
+    params = username,
 
     c.execute("DELETE FROM user_table WHERE username=?)", params)
 
@@ -74,9 +74,11 @@ def retrieve_user(username):
     conn = sqlite3.connect(database_file)
     c = conn.cursor()
 
-    params = username
+    params = username,
 
     c.execute("SELECT * FROM user_table WHERE username=?", params)
+    user = c.fetchone()
 
     # Closing connection
     conn.close()
+    return user
