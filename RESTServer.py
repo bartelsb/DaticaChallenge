@@ -65,7 +65,7 @@ class UserResource(object):
         if EncryptionFunctions.authenticate(token) and EncryptionFunctions.retrieve_username(token) == username:
             # May want to consider deleting session token here as well, unless implementing admin roles
             DatabaseInteractions.delete_user(username)
-            resp.status = falcon.HTTP_204
+            resp.status = falcon.HTTP_202
         else:
             resp.status = falcon.HTTP_401
 
@@ -91,7 +91,7 @@ class AuthenticationResource(object):
         token = req.get_param('session_token', True)
         if EncryptionFunctions.authenticate(token):
             EncryptionFunctions.delete_session_token(token)
-            resp.status = falcon.HTTP_204
+            resp.status = falcon.HTTP_202
         else:
             resp.status = falcon.HTTP_401
 

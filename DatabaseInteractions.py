@@ -46,7 +46,7 @@ def delete_user(username):
 
     params = username,
 
-    c.execute("DELETE FROM user_table WHERE username=?)", params)
+    c.execute("DELETE FROM user_table WHERE username=?", params)
 
     # Committing changes and closing connection
     conn.commit()
