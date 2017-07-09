@@ -91,3 +91,24 @@ Implement a simple REST API that allows a user to sign up and provide a username
 - Automated unit and/or integration tests.
 
 - Use Redis to store and retrieve session data, having each token expire after 24 hours.
+
+
+## Instructions for running and testing project
+
+### Required software
+
+- Python (3.6 or higher because I made use of the secrets module)
+
+- Redis 3.2 - I used the Windows .msi found [here](https://github.com/MicrosoftArchive/redis/releases), but as long as you have a Redis server running locally and listening to port 6379, it should work
+
+- Falcon - Just run 'pip install falcon' to get the latest version
+
+- Waitress if on Windows ('pip install waitress', Gunicorn if on a Unix-based system ('pip install gunicorn')
+
+### Instructions for running
+
+- Start the server with 'waitress-serve --port=8000 RESTServer:app' if using Waitress, with 'gunicorn RESTServer:app' if using Gunicorn. I only tested using Waitress, but Falcon's documentation indicates that they both should work.
+
+- Make web requests using a tool such as curl or [HTTPie](https://github.com/jakubroztocil/httpie). You can install HTTPie with 'pip install --upgrade httpie'.
+
+- The request for signing up might look something like this: 'http --form POST localhost:8000/auth username=ben password=pass'.
