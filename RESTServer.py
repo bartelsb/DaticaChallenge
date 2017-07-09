@@ -2,7 +2,6 @@ import falcon
 import DatabaseInteractions
 import EncryptionFunctions
 import os
-import json
 
 if os.path.exists(DatabaseInteractions.database_file):
     print(str('Database exists'))

@@ -18,7 +18,9 @@ def check_password(raw_password, enc_password, salt):
 
 
 def authenticate(token):
-    return token_db.get(token.encode('utf-8')) is not None
+    if token is not None:
+        return token_db.get(token.encode('utf-8')) is not None
+    return False
 
 
 def retrieve_username(token):
