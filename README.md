@@ -111,3 +111,4 @@ Implement a simple REST API that allows a user to sign up and provide a username
 
 - Make web requests using a tool such as curl or [HTTPie](https://github.com/jakubroztocil/httpie). You can install HTTPie with 'pip install --upgrade httpie'.
 
+- The request for signing up might look something like this: 'http --form POST localhost:8000/auth username=ben password=pass'.
