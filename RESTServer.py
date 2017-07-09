@@ -2,8 +2,7 @@ import falcon
 import DatabaseInteractions
 import EncryptionFunctions
 import os
-import secrets
-import redis
+import json
 
 if os.path.exists(DatabaseInteractions.database_file):
     print(str('Database exists'))
@@ -11,17 +10,17 @@ else:
     print(str('Creating database'))
     DatabaseInteractions.create_database()
 
-token_db = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 class BaseResource(object):
 
     def on_get(self, req, resp):
         session_token = req.get_param('session_token')
-        if session_token is not None and self.authenticate(session_token):
-            username = token_db.get(session_token)
+        if EncryptionFunctions.authenticate(session_token):
+            username = EncryptionFunctions.retrieve_username(session_token)
             user_data = DatabaseInteractions.retrieve_user(username)
             resp.status = falcon.HTTP_200
-            resp.body = '{username: ' + username + ', additional_info: ' + user_data['additional_info'] + '}'
+            # index 4 is additional data
+            resp.body = '{username: ' + username + ', additional_info: ' + str(user_data[4]) + '}'
         else:
             resp.status = falcon.HTTP_200
             resp.content_type = 'application/json'
@@ -43,20 +42,20 @@ class UserResource(object):
 
     def on_get(self, req, resp, username):
         token = req.get_param('session_token', True)
-        if self.authenticate(token) and token_db.get(token) == username:
+        if EncryptionFunctions.authenticate(token) and EncryptionFunctions.retrieve_username(token) == username:
             user_data = DatabaseInteractions.retrieve_user(username)
-            if not user:
+            if not user_data:
                 raise falcon.exceptions.HTTPNotFound()
             resp.status = falcon.HTTP_200
             resp.content_type = 'application/json'
-            resp.body = user_data
+            resp.body = '{username: ' + username + ', additional_info: ' + str(user_data[4]) + '}'
         else:
             resp.status = falcon.HTTP_401
 
     def on_put(self, req, resp, username):
         token = req.get_param('session_token', True)
-        if self.authenticate(token) and token_db.get(token) == username:
-            additional_info = '{additional: info}'
+        if EncryptionFunctions.authenticate(token) and EncryptionFunctions.retrieve_username(token) == username:
+            additional_info = req.get_param('additional_info')
             DatabaseInteractions.update_user(username, additional_info)
             resp.status = falcon.HTTP_200
         else:
@@ -64,7 +63,8 @@ class UserResource(object):
 
     def on_delete(self, req, resp, username):
         token = req.get_param('session_token', True)
-        if self.authenticate(token) and token_db.get(token) == username:
+        if EncryptionFunctions.authenticate(token) and EncryptionFunctions.retrieve_username(token) == username:
+            # May want to consider deleting session token here as well, unless implementing admin roles
             DatabaseInteractions.delete_user(username)
             resp.status = falcon.HTTP_204
         else:
@@ -83,22 +83,18 @@ class AuthenticationResource(object):
         if not EncryptionFunctions.check_password(password, retrieved_user[2], retrieved_user[3]):  # index 2 is password, index 3 is salt for hash
             resp.status = falcon.HTTP_401
             return
-        session_token = secrets.token_urlsafe()
-        token_db.setex(session_token, 60, username)  # 24-hour expiration
+        session_token = EncryptionFunctions.generate_session_token(username)
         resp.status = falcon.HTTP_200
         resp.content_type = 'application/json'
         resp.body = '{session_token: ' + session_token + '}'
 
     def on_delete(self, req, resp):
         token = req.get_param('session_token', True)
-        if self.authenticate(token):
-            token_db.delete(token)
+        if EncryptionFunctions.authenticate(token):
+            EncryptionFunctions.delete_session_token(token)
             resp.status = falcon.HTTP_204
         else:
             resp.status = falcon.HTTP_401
-
-    def authenticate(self, token):
-        return token_db.get(token) is None
 
 
 app = falcon.API()
@@ -108,5 +104,8 @@ user = UserResource()
 auth = AuthenticationResource()
 
 app.add_route('/', default)
+app.add_route('/user', user)
 app.add_route('/user/{username}', user)
 app.add_route('/auth', auth)
+
+app.req_options.auto_parse_form_urlencoded = True  # allows form content to be included as query string params
